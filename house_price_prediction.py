@@ -7,9 +7,10 @@ from sklearn.tree import DecisionTreeRegressor
 import matplotlib.pyplot as plt
 import numpy as np
 import joblib
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 def load_data(file_path):
-    # Load dataset
+    # Load datasetxl
     try:
         df = pd.read_csv(r"C:\Users\ANAND\PycharmProjects\PythonProject5\data.csv")
         df = df.rename(columns={"price": "PRICE"})
@@ -61,10 +62,42 @@ def train_models(X_train, y_train):
 #     return score
 
 def evaluate_model(model, X_test, y_test):
+    # score = model.score(X_test, y_test)
+    # y_pred = model.predict(X_test)
+    #
+    # print("R-squared Score:", score)
+    #
+    # actual = y_test[:10]
+    # predicted = y_pred[:10]
+    #
+    # for a, p in zip(actual, predicted):
+    #     print(f"Actual: {a} | Predicted: {p}")
+    #
+    # x = np.arange(len(actual))
+    #
+    # plt.bar(x-0.2, actual, width=0.4, label="Actual")
+    # plt.bar(x+0.2, predicted, width=0.4, label="Predicted")
+    #
+    # plt.xlabel("Test Samples")
+    # plt.ylabel("Price")
+    # plt.title("Actual vs Predicted Prices")
+    # plt.legend()
+    # plt.show()
+    # return score, actual, predicted
     score = model.score(X_test, y_test)
     y_pred = model.predict(X_test)
 
     print("R-squared Score:", score)
+
+    # ---- Error Calculations (Added) ----
+    mae = mean_absolute_error(y_test, y_pred)
+    mse = mean_squared_error(y_test, y_pred)
+    rmse = np.sqrt(mse)
+
+    print("Mean Absolute Error (MAE):", mae)
+    print("Mean Squared Error (MSE):", mse)
+    print("Root Mean Squared Error (RMSE):", rmse)
+    # -----------------------------------
 
     actual = y_test[:10]
     predicted = y_pred[:10]
@@ -74,15 +107,27 @@ def evaluate_model(model, X_test, y_test):
 
     x = np.arange(len(actual))
 
-    plt.bar(x-0.2, actual, width=0.4, label="Actual")
-    plt.bar(x+0.2, predicted, width=0.4, label="Predicted")
+    plt.bar(x - 0.2, actual, width=0.4, label="Actual")
+    plt.bar(x + 0.2, predicted, width=0.4, label="Predicted")
 
     plt.xlabel("Test Samples")
     plt.ylabel("Price")
     plt.title("Actual vs Predicted Prices")
     plt.legend()
     plt.show()
-    return score, actual, predicted
+    residuals = y_test - y_pred
+
+    plt.scatter(y_pred, residuals)
+
+    plt.axhline(y=0, linestyle='--')
+
+    plt.xlabel("Predicted Price")
+    plt.ylabel("Residuals (Actual - Predicted)")
+    plt.title("Residual Plot")
+
+    plt.show()
+
+    return score, actual, predicted,mae, mse, rmse
 
 
 
@@ -107,15 +152,20 @@ def main():
         # # Print score
         # print(f'R-squared Score: {score:.2f}')
         models = train_models(X_train, y_train)
-
+        mae_results = {}
+        mse_results = {}
+        rmse_results = {}
         results = {}
         for name, model in models.items():
             print("\n==========================")
             print("Model:", name)
 
-            score, actual, predicted = evaluate_model(model, X_test, y_test)
+            score, actual, predicted,mae, mse, rmse = evaluate_model(model, X_test, y_test)
 
             results[name] = score
+            mae_results[name] = mae
+            mse_results[name] = mse
+            rmse_results[name] = rmse
 
             # Print comparison
         print("\nModel Comparison")
@@ -129,6 +179,22 @@ def main():
         plt.ylabel("R-Squared Score")
         plt.title("Model Performance Comparison")
 
+        plt.show()
+        # Error Comparison Graph
+        models_list = list(mae_results.keys())
+        x = np.arange(len(models_list))
+
+        plt.bar(x - 0.2, list(mae_results.values()), width=0.2, label="MAE")
+        plt.bar(x, list(mse_results.values()), width=0.2, label="MSE")
+        plt.bar(x + 0.2, list(rmse_results.values()), width=0.2, label="RMSE")
+
+        plt.xticks(x, models_list)
+
+        plt.xlabel("Models")
+        plt.ylabel("Error Values")
+        plt.title("Error Comparison of Models")
+
+        plt.legend()
         plt.show()
         best_model_name = max(results, key=results.get)
         best_model = models[best_model_name]
